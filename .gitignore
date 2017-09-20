@@ -6,6 +6,27 @@ __pycache__/
 # C extensions
 *.so
 
+# Otther files
+.DS_Store
+.directory
+
+# R history files and session data file
+.Rhistory
+.Rapp.history
+.RData
+
+# kiotr and R markdown default cache directories
+*_cache/
+cache/
+
+# TEX files generated from build
+*.aux
+*.blg
+*.lot
+*.lof
+*.idx
+*.toc
+
 # Distribution / packaging
 .Python
 env/
