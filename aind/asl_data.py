@@ -14,6 +14,9 @@ import numpy as np
 import pandas as pd
 
 
+PATH = '../data'
+
+
 class AslDb(object):
     """ American Sign Language database drawn from the RWTH-BOSTON-104 frame positional data
 
@@ -31,8 +34,8 @@ class AslDb(object):
     """
 
     def __init__(self,
-                 hands_fn=os.path.join('data', 'hands_condensed.csv'),
-                 speakers_fn=os.path.join('data', 'speaker.csv'),
+                 hands_fn=os.path.join(PATH, 'hands_condensed.csv'),
+                 speakers_fn=os.path.join(PATH, 'speaker.csv'),
                  ):
         """ loads ASL database from csv files with hand position information by frame, and speaker information
 
@@ -56,7 +59,7 @@ class AslDb(object):
         self.df = pd.read_csv(hands_fn).merge(pd.read_csv(speakers_fn),on='video')
         self.df.set_index(['video','frame'], inplace=True)
 
-    def build_training(self, feature_list, csvfilename =os.path.join('data', 'train_words.csv')):
+    def build_training(self, feature_list, csvfilename =os.path.join(PATH, 'train_words.csv')):
         """ wrapper creates sequence data objects for training words suitable for hmmlearn library
 
         :param feature_list: list of str label names
@@ -67,7 +70,7 @@ class AslDb(object):
         """
         return WordsData(self, csvfilename, feature_list)
 
-    def build_test(self, feature_method, csvfile=os.path.join('data', 'test_words.csv')):
+    def build_test(self, feature_method, csvfile=os.path.join(PATH, 'test_words.csv')):
         """ wrapper creates sequence data objects for individual test word items suitable for hmmlearn library
 
         :param feature_method: Feature function

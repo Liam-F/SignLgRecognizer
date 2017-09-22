@@ -8,7 +8,7 @@ An example code to test using unittest
 Created on MM/DD/YYYY
 """
 
-from asl_data import SinglesData, WordsData
+from aind.asl_data import SinglesData, WordsData
 import numpy as np
 from IPython.core.display import display, HTML
 
