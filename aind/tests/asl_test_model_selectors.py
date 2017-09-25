@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from asl_data import AslDb
-from my_model_selectors import (
+from aind.asl_data import AslDb
+from aind.my_model_selectors import (
     SelectorConstant, SelectorBIC, SelectorDIC, SelectorCV,
 )
 
