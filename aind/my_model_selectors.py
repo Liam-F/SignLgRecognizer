@@ -120,27 +120,35 @@ class SelectorCV(ModelSelector):
 
     def select(self):
         warnings.filterwarnings("ignore", category=DeprecationWarning)
-
         # implement model selection using CV
         split_method = KFold(min(3, len(self.sequences)))
         l_aux = range(self.min_n_components, self.max_n_components + 1)
         best_avg = -10e8
-        best_model = None
+        best_model = self.base_model(self.n_constant)
+        i_seq = self.sequences
         for num_states in l_aux:
             curr_err = 0.
             i_count = 0
-            for cv_train_idx, cv_test_idx in split_method.split(self.sequences):
-                t_train = combine_sequences(cv_train_idx, self.sequences)
-                t_test = combine_sequences(cv_test_idx, self.sequences)
-                hmm_model = GaussianHMM(n_components=num_states,
-                                        covariance_type="diag", n_iter=1000,
-                                        random_state=self.random_state,
-                                        verbose=False)
-                hmm_model.fit(t_train[0], t_train[1])
-                curr_err += hmm_model.score(t_test[0], t_test[1])
-                i_count += 1
+            try:
+                iter_obj = split_method.split(self.sequences)
+                for train_idx, test_idx in iter_obj:
+                    X_train, Y_train = combine_sequences(train_idx, i_seq)
+                    X_test, Y_test = combine_sequences(test_idx, i_seq)
+                    hmm_model = GaussianHMM(n_components=num_states,
+                                            covariance_type='diag',
+                                            n_iter=1000,
+                                            random_state=self.random_state,
+                                            verbose=False)
+                    hmm_model.fit(X_train, Y_train)
+                    curr_err += hmm_model.score(X_test, Y_test)
+                    i_count += 1
+            except ValueError:
+                continue
+                # print(i_count)
             # select the model with the smaller error
-            if curr_err/i_count > best_avg:
+            if i_count == 0:
+                best_model = hmm_model
+            elif curr_err/i_count > best_avg:
                 best_avg = curr_err/i_count
                 best_model = hmm_model
         return best_model
