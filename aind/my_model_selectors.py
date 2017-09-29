@@ -79,6 +79,9 @@ class SelectorBIC(ModelSelector):
 
     http://www2.imm.dtu.dk/courses/02433/doc/ch6_slides.pdf
     Bayesian information criteria: BIC = -2 * logL + p * logN
+
+    Wiki: https://en.wikipedia.org/wiki/Hidden_Markov_model#Architecture
+    Docs: https://goo.gl/gE2JYK
     """
 
     def select(self):
@@ -89,8 +92,45 @@ class SelectorBIC(ModelSelector):
         """
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-        # TODO implement model selection based on BIC scores
-        raise NotImplementedError
+        # implement model selection based on BIC scores
+        l_aux = range(self.min_n_components, self.max_n_components + 1)
+        best_bic = 10e8
+        best_model = self.base_model(self.n_constant)
+        for num_states in l_aux:
+            curr_err = 10e8
+            try:
+                hmm_model = self.base_model(num_states)
+                # logL is the score of the model
+                curr_err += hmm_model.score(self.X, self.lengths)
+
+                # calculate the Free parameters
+                # (1) The transition probabilities is a N × N matrix and is
+                # called Markov matrix. Because any one transition probability
+                # can be determined once the others are known, there are a
+                # total of N(N-1) transition parameters (Wiki)
+                i_transmat = num_states * (num_states-1)
+
+                # (2) The emission probabilities to GaussianHMM is the number
+                # of free size of means and covar matrix, where the last one is
+                # diagonal
+                i_emission = hmm_model.means_.shape[0]
+                i_emission *= hmm_model.means_.shape[1]
+                i_emission += sum(sum(sum(hmm_model.covars_ != 0)))
+
+                # (3) Start prior, or _startprob attr, is the number of states
+                i_startprob = num_states
+                # p = size(transmat) + size(emission) + size(initial)
+                n_freeparm = i_transmat + i_emission + i_startprob
+
+                # BIC = -2 * logL + p * logN
+                curr_bic = -2 * curr_err + n_freeparm * np.log(self.X.shape[0])
+            except ValueError:
+                continue
+            # select the model with the smaller error
+            if curr_err < best_bic:
+                best_bic = curr_bic
+                best_model = hmm_model
+        return best_model
 
 
 class SelectorDIC(ModelSelector):
@@ -124,16 +164,16 @@ class SelectorCV(ModelSelector):
         split_method = KFold(min(3, len(self.sequences)))
         l_aux = range(self.min_n_components, self.max_n_components + 1)
         best_avg = -10e8
-        best_model = self.base_model(self.n_constant)
-        i_seq = self.sequences
+        best_nstates = self.n_constant
+        X_all = self.sequences
         for num_states in l_aux:
             curr_err = 0.
             i_count = 0
             try:
                 iter_obj = split_method.split(self.sequences)
                 for train_idx, test_idx in iter_obj:
-                    X_train, Y_train = combine_sequences(train_idx, i_seq)
-                    X_test, Y_test = combine_sequences(test_idx, i_seq)
+                    X_train, Y_train = combine_sequences(train_idx, X_all)
+                    X_test, Y_test = combine_sequences(test_idx, X_all)
                     hmm_model = GaussianHMM(n_components=num_states,
                                             covariance_type='diag',
                                             n_iter=1000,
@@ -147,8 +187,8 @@ class SelectorCV(ModelSelector):
                 # print(i_count)
             # select the model with the smaller error
             if i_count == 0:
-                best_model = hmm_model
+                best_nstates = num_states
             elif curr_err/i_count > best_avg:
                 best_avg = curr_err/i_count
-                best_model = hmm_model
-        return best_model
+                best_nstates = num_states
+        return self.base_model(best_nstates)
