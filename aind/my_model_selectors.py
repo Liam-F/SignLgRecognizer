@@ -101,7 +101,7 @@ class SelectorBIC(ModelSelector):
             try:
                 hmm_model = self.base_model(num_states)
                 # logL is the score of the model
-                curr_err += hmm_model.score(self.X, self.lengths)
+                curr_err = hmm_model.score(self.X, self.lengths)
 
                 # calculate the Free parameters
                 # (1) The transition probabilities is a N × N matrix and is
@@ -117,7 +117,7 @@ class SelectorBIC(ModelSelector):
                 i_emission *= hmm_model.means_.shape[1]
                 i_emission += sum(sum(sum(hmm_model.covars_ != 0)))
 
-                # (3) Start prior, or _startprob attr, is the number of states
+                # (3) Start probability attr, has the size of the # of states
                 i_startprob = num_states
                 # p = size(transmat) + size(emission) + size(initial)
                 n_freeparm = i_transmat + i_emission + i_startprob
@@ -127,7 +127,7 @@ class SelectorBIC(ModelSelector):
             except ValueError:
                 continue
             # select the model with the smaller error
-            if curr_err < best_bic:
+            if curr_bic < best_bic:
                 best_bic = curr_bic
                 best_model = hmm_model
         return best_model
@@ -136,19 +136,48 @@ class SelectorBIC(ModelSelector):
 class SelectorDIC(ModelSelector):
     ''' select best model based on Discriminative Information Criterion
 
+    DIC = log(P(X(i)) - 1/(M-1)SUM(log(P(X(all but i))
+
     Biem, Alain. "A model selection criterion for classification: Application
     to hmm topology optimization." Document Analysis and Recognition, 2003.
     Proceedings. Seventh International Conference on. IEEE, 2003.
-    https://goo.gl/CkgJ4H
-    https://goo.gl/Za9QWE
-    DIC = log(P(X(i)) - 1/(M-1)SUM(log(P(X(all but i))
+    link: https://goo.gl/CkgJ4H
     '''
 
     def select(self):
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-        # TODO implement model selection based on DIC scores
-        raise NotImplementedError
+        # implement model selection based on DIC scores
+        l_aux = range(self.min_n_components, self.max_n_components + 1)
+        best_dic = -10e8
+        best_nsatets = self.n_constant
+        # measure the error of all "competing classes" using the same data set
+        d_competing_errs = {}
+        for num_states in l_aux:
+            curr_err = 10e8
+            try:
+                hmm_model = self.base_model(num_states)
+                # logL is the score of the model
+                curr_err = hmm_model.score(self.X, self.lengths)
+                d_competing_errs[num_states] = curr_err
+            except ValueError:
+                continue
+
+        # the Discriminant Factor Criterion is the difference between the
+        # evidence of the model, given the corresponding data set, and the
+        # average over anti-evidences of the model
+        f_sumLogL = sum(d_competing_errs.values())# SUM(log(P(X(all))
+        m = len(d_competing_errs) * 1.
+        for num_states in d_competing_errs.keys():
+            # measure DIC, the "evidence"
+            # DIC = log(P(X(i)) - 1/(M-1)SUM(log(P(X(all but i))
+            f_logL = d_competing_errs[num_states]
+            curr_dic = f_logL - (f_sumLogL - f_logL)/(m-1.)
+            # choose a model which maximizes the evidence
+            if curr_dic > best_dic:
+                best_dic = curr_dic
+                best_nsatets = num_states
+        return self.base_model(best_nsatets)
 
 
 class SelectorCV(ModelSelector):
