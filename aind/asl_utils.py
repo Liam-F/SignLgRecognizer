@@ -16,6 +16,21 @@ RAW_FEATURES = ['left-x', 'left-y', 'right-x', 'right-y']
 GROUND_FEATURES = ['grnd-rx', 'grnd-ry', 'grnd-lx', 'grnd-ly']
 
 
+def get_error(guesses: list, test_set: SinglesData):
+    '''return the WER of the guesses, the total of correct words and the total
+    number of words'''
+    S = 0
+    N = len(test_set.wordlist)
+    num_test_words = len(test_set.wordlist)
+    if len(guesses) != num_test_words:
+        s_txt = "Size of guesses must equal number of test words ({})!"
+        print(s_txt.format(num_test_words))
+    for word_id in range(num_test_words):
+        if guesses[word_id] != test_set.wordlist[word_id]:
+            S += 1
+    return float(S) / float(N), N - S, N
+
+
 def show_errors(guesses: list, test_set: SinglesData):
     """ Print WER and sentence differences in tabular form
 
@@ -40,7 +55,7 @@ def show_errors(guesses: list, test_set: SinglesData):
     print("\n**** WER = {}".format(float(S) / float(N)))
     print("Total correct: {} out of {}".format(N - S, N))
     print('Video  Recognized' + ' ' * 52 + 'Correct')
-    print('=' * 101)
+    print('=' * 95)
     for video_num in test_set.sentences_index:
         correct_sentence = [test_set.wordlist[i] for i in
                             test_set.sentences_index[video_num]]

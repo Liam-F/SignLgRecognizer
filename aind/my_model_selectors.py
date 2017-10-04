@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """
-An example code to test using unittest
+Implement different model selection strategies to Hiden Markov Models
 
 @author: udacity, ucaiado
 
@@ -124,7 +124,7 @@ class SelectorBIC(ModelSelector):
 
                 # BIC = -2 * logL + p * logN
                 curr_bic = -2 * curr_err + n_freeparm * np.log(self.X.shape[0])
-            except ValueError:
+            except (ValueError, AttributeError) as e:
                 continue
             # select the model with the smaller error
             if curr_bic < best_bic:
@@ -160,7 +160,7 @@ class SelectorDIC(ModelSelector):
                 # logL is the score of the model
                 curr_err = hmm_model.score(self.X, self.lengths)
                 d_competing_errs[num_states] = curr_err
-            except ValueError:
+            except (ValueError, AttributeError) as e:
                 continue
 
         # the Discriminant Factor Criterion is the difference between the
@@ -190,7 +190,7 @@ class SelectorCV(ModelSelector):
     def select(self):
         warnings.filterwarnings("ignore", category=DeprecationWarning)
         # implement model selection using CV
-        split_method = KFold(min(3, len(self.sequences)))
+        split_method = KFold()
         l_aux = range(self.min_n_components, self.max_n_components + 1)
         best_avg = -10e8
         best_nstates = self.n_constant
@@ -211,7 +211,7 @@ class SelectorCV(ModelSelector):
                     hmm_model.fit(X_train, Y_train)
                     curr_err += hmm_model.score(X_test, Y_test)
                     i_count += 1
-            except ValueError:
+            except (ValueError, AttributeError) as e:
                 continue
                 # print(i_count)
             # select the model with the smaller error

@@ -31,7 +31,8 @@ Take a look [here](data/README.md) to see more details about the datasets used i
 
 
 ### References
-2. Udacity original code. [link](https://github.com/udacity/AIND-Recognizer)
+1. Udacity original code. [link](https://github.com/udacity/AIND-Recognizer)
+2. Biem, Alain. _"A model selection criterion for classification: Application to hmm topology optimization."_ In Document Analysis and Recognition, 2003. [link](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.58.6208&rep=rep1&type=pdf)
 
 
 ### License

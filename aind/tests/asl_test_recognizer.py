@@ -15,10 +15,10 @@ Created on MM/DD/YYYY
 
 from unittest import TestCase
 
-from asl_data import AslDb
-from asl_utils import train_all_words
-from my_model_selectors import SelectorConstant
-from my_recognizer import recognize
+from aind.asl_data import AslDb
+from aind.asl_utils import train_all_words
+from aind.my_model_selectors import SelectorConstant
+from aind.my_recognizer import recognize
 
 FEATURES = ['right-y', 'right-x']
 
