@@ -96,6 +96,7 @@ class SelectorBIC(ModelSelector):
         l_aux = range(self.min_n_components, self.max_n_components + 1)
         best_bic = 10e8
         best_model = self.base_model(self.n_constant)
+        n, f = self.X.shape
         for num_states in l_aux:
             curr_err = 10e8
             try:
@@ -103,22 +104,45 @@ class SelectorBIC(ModelSelector):
                 # logL is the score of the model
                 curr_err = hmm_model.score(self.X, self.lengths)
 
+                # ###### UDACITY CODE REVIEWR SUGESTION ################
+                # "Free parameters" are parameters that are learned by the
+                # model and it is a sum of:
+                # 1. The free transition probability parameters, which is the
+                # size of the transmat matrix less one row because they add up
+                # to 1 and therefore the final row is deterministic, so
+                # `n*(n-1)`
+                i_transmat = num_states * (num_states-1)
+
+                # 2. The free starting probabilities, which is the size of
+                # startprob minus 1 because it adds to 1.0 and last one can be
+                # calculated so `n-1`
+                i_startprob = num_states - 1
+
+                # 3. Number of means, which is `n*f`, where `f` is the number
+                # of features
+                i_emission = num_states * f
+
+                # 4. Number of covariances which is the size of the covars
+                # matrix, which for "diag" is `n*f`
+                i_emission += num_states * f
+
+                # ###### OLD DEFINITION ################
                 # calculate the Free parameters
                 # (1) The transition probabilities is a N × N matrix and is
                 # called Markov matrix. Because any one transition probability
                 # can be determined once the others are known, there are a
                 # total of N(N-1) transition parameters (Wiki)
-                i_transmat = num_states * (num_states-1)
+                # i_transmat = num_states * (num_states-1)
 
                 # (2) The emission probabilities to GaussianHMM is the number
                 # of free size of means and covar matrix, where the last one is
                 # diagonal
-                i_emission = hmm_model.means_.shape[0]
-                i_emission *= hmm_model.means_.shape[1]
-                i_emission += sum(sum(sum(hmm_model.covars_ != 0)))
+                # i_emission = hmm_model.means_.shape[0]
+                # i_emission *= hmm_model.means_.shape[1]
+                # i_emission += sum(sum(sum(hmm_model.covars_ != 0)))
 
                 # (3) Start probability attr, has the size of the # of states
-                i_startprob = num_states
+                # i_startprob = num_states
                 # p = size(transmat) + size(emission) + size(initial)
                 n_freeparm = i_transmat + i_emission + i_startprob
 
@@ -144,7 +168,39 @@ class SelectorDIC(ModelSelector):
     link: https://goo.gl/CkgJ4H
     '''
 
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    warnings.filterwarnings("ignore", category=RuntimeWarning)
+
     def select(self):
+        # Udacity code reviers sugestion
+        best_model = None
+        best_score = float("-Inf")
+        for n in range(self.min_n_components, self.max_n_components + 1):
+            # measure the error of all "competing classes"
+            try:
+                scores = []
+                hmm_model = self.base_model(n)
+                f_logL = float("-Inf")
+                for w, (X, lengths) in self.hwords.items():
+                    if w != self.this_word:
+                        # Please develop the rest of your function below
+                        scores.append(hmm_model.score(X, lengths))
+                    else:
+                        f_logL = hmm_model.score(X, lengths)
+            except (ValueError, AttributeError) as e:
+                continue
+            # the Discriminant Factor Criterion is the difference between the
+            # evidence of the model, given the corresponding data set, and the
+            # average over anti-evidences of the model
+            m = len(scores) * 1.
+            f_sumLogL = sum(scores)
+            curr_dic = f_logL - (f_sumLogL - f_logL)/(m-1.)
+            if curr_dic > best_score:
+                best_score = curr_dic
+                best_model = hmm_model
+        return best_model
+
+    def select_OLD(self):
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
         # implement model selection based on DIC scores
@@ -166,7 +222,7 @@ class SelectorDIC(ModelSelector):
         # the Discriminant Factor Criterion is the difference between the
         # evidence of the model, given the corresponding data set, and the
         # average over anti-evidences of the model
-        f_sumLogL = sum(d_competing_errs.values())# SUM(log(P(X(all))
+        f_sumLogL = sum(d_competing_errs.values())  # SUM(log(P(X(all))
         m = len(d_competing_errs) * 1.
         for num_states in d_competing_errs.keys():
             # measure DIC, the "evidence"
