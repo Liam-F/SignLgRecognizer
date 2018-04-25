@@ -1,7 +1,7 @@
 Sign Language Recognition System
 ===========================
 
-In this project, I will building a sign language recognition system using AI. Bla ... bla. This project is part of the [Artificial Intelligence Nanodegree](https://www.udacity.com/course/artificial-intelligence-nanodegree--nd889) program, from Udacity. You can check my report <a href="" target="_blank">here</a>
+In this project, I will building a sign language recognition system using AI. Bla ... bla. This project is part of the [Artificial Intelligence Nanodegree](https://www.udacity.com/course/artificial-intelligence-nanodegree--nd889) program, from Udacity. You can check my report <a href="http://nbviewer.jupyter.org/github/ucaiado/SignLgRecognizer/blob/master/notebooks/asl_recognizer.ipynb" target="_blank">here</a>
 
 
 ### Install
